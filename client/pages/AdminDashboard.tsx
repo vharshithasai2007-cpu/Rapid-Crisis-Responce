@@ -253,9 +253,9 @@ export default function AdminDashboard() {
                       {!alert.assignedAt ? (
                         <span className="h-2 w-2 rounded-full bg-critical"></span>
                       ) : !alert.resolvedAt ? (
-                        <span className="h-2 w-2 rounded-full bg-medium"></span>
+                        <span className="h-2 w-2 rounded-full bg-blue-600"></span>
                       ) : (
-                        <span className="h-2 w-2 rounded-full bg-low"></span>
+                        <span className="h-2 w-2 rounded-full bg-green-600"></span>
                       )}
                       <span className="text-muted-foreground">
                         {!alert.assignedAt
