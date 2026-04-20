@@ -1,28 +1,22 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, X, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { classifyEmergency } from "@/lib/classifyEmergency";
+import {
+  alertsUpdatedEventName,
+  readAlerts,
+  writeAlerts,
+  type AlertRecord,
+} from "@/lib/alertsStore";
 
-interface Alert {
-  id: string;
-  patientName: string;
-  room: string;
-  floor: string;
-  severity: "critical" | "medium" | "low";
-  emergencyType: "fire" | "medical" | "security" | "unknown";
-  message: string;
-  timestamp: string;
-  status: "pending" | "accepted" | "resolved";
-}
-
-const initialAlerts: Alert[] = [
+const initialAlerts: AlertRecord[] = [
   {
     id: "1",
     patientName: "Sarah Johnson",
     room: "304",
     floor: "3rd",
+    type: "medical",
     severity: "critical",
-    emergencyType: "medical",
+    label: "Medical Emergency",
     message: "Severe chest pain and difficulty breathing",
     timestamp: "2 min ago",
     status: "pending",
@@ -32,8 +26,9 @@ const initialAlerts: Alert[] = [
     patientName: "Michael Chen",
     room: "215",
     floor: "2nd",
+    type: "medical",
     severity: "critical",
-    emergencyType: "medical",
+    label: "Medical Emergency",
     message: "Patient experiencing sudden pain and discomfort",
     timestamp: "8 min ago",
     status: "accepted",
@@ -43,8 +38,9 @@ const initialAlerts: Alert[] = [
     patientName: "Emma Wilson",
     room: "402",
     floor: "4th",
+    type: "unknown",
     severity: "low",
-    emergencyType: "unknown",
+    label: "General Request",
     message: "Assistance with mobility needed",
     timestamp: "15 min ago",
     status: "resolved",
@@ -54,8 +50,9 @@ const initialAlerts: Alert[] = [
     patientName: "James Rodriguez",
     room: "510",
     floor: "5th",
+    type: "security",
     severity: "medium",
-    emergencyType: "security",
+    label: "Security Alert",
     message: "Suspicious activity and concern for safety",
     timestamp: "4 min ago",
     status: "pending",
@@ -94,26 +91,44 @@ const emergencyTypeConfig = {
 };
 
 export default function StaffDashboard() {
-  const [alerts, setAlerts] = useState<Alert[]>(initialAlerts);
+  const [alerts, setAlerts] = useState<AlertRecord[]>(() =>
+    readAlerts(initialAlerts)
+  );
+
+  useEffect(() => {
+    const syncAlerts = () => {
+      setAlerts(readAlerts(initialAlerts));
+    };
+
+    window.addEventListener(alertsUpdatedEventName(), syncAlerts);
+    window.addEventListener("storage", syncAlerts);
+
+    return () => {
+      window.removeEventListener(alertsUpdatedEventName(), syncAlerts);
+      window.removeEventListener("storage", syncAlerts);
+    };
+  }, []);
 
   const handleAccept = (id: string) => {
-    setAlerts(
-      alerts.map((alert) =>
-        alert.id === id ? { ...alert, status: "accepted" } : alert
-      )
+    const nextAlerts = alerts.map((alert) =>
+      alert.id === id ? { ...alert, status: "accepted" } : alert
     );
+    setAlerts(nextAlerts);
+    writeAlerts(nextAlerts);
   };
 
   const handleResolve = (id: string) => {
-    setAlerts(
-      alerts.map((alert) =>
-        alert.id === id ? { ...alert, status: "resolved" } : alert
-      )
+    const nextAlerts = alerts.map((alert) =>
+      alert.id === id ? { ...alert, status: "resolved" } : alert
     );
+    setAlerts(nextAlerts);
+    writeAlerts(nextAlerts);
   };
 
   const handleFalseAlert = (id: string) => {
-    setAlerts(alerts.filter((alert) => alert.id !== id));
+    const nextAlerts = alerts.filter((alert) => alert.id !== id);
+    setAlerts(nextAlerts);
+    writeAlerts(nextAlerts);
   };
 
   // Sort alerts: pending first, then by severity
@@ -170,7 +185,7 @@ export default function StaffDashboard() {
             {sortedAlerts.map((alert) => {
               const severity = severityConfig[alert.severity];
               const status = statusConfig[alert.status];
-              const emergencyType = emergencyTypeConfig[alert.emergencyType];
+              const emergencyType = emergencyTypeConfig[alert.type];
 
               return (
                 <div

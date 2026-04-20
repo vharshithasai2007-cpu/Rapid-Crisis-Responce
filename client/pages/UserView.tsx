@@ -3,13 +3,15 @@ import { Mic, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   classifyEmergency,
-  type EmergencyClassification,
 } from "@/lib/classifyEmergency";
+import { addAlert } from "@/lib/alertsStore";
 
 interface AlertStatus {
   isActive: boolean;
   message: string;
-  classification: EmergencyClassification;
+  type: "fire" | "medical" | "security" | "unknown";
+  severity: "critical" | "medium" | "low";
+  label: string;
 }
 
 export default function UserView() {
@@ -25,10 +27,26 @@ export default function UserView() {
   const handleConfirmAlert = () => {
     const messageToSend = message || "Emergency assistance needed";
     const classification = classifyEmergency(messageToSend);
+    const alert = {
+      id: `${Date.now()}`,
+      patientName: "Sarah Johnson",
+      room: "304",
+      floor: "3rd",
+      type: classification.type,
+      severity: classification.severity,
+      label: classification.label,
+      message: messageToSend,
+      timestamp: "Just now",
+      status: "pending" as const,
+    };
+
+    addAlert(alert);
     setAlertStatus({
       isActive: true,
       message: messageToSend,
-      classification,
+      type: classification.type,
+      severity: classification.severity,
+      label: classification.label,
     });
     setShowConfirmation(false);
     setMessage("");
@@ -52,10 +70,26 @@ export default function UserView() {
   const handleReportUnattended = () => {
     const unattendedMessage = "Patient is unattended";
     const classification = classifyEmergency(unattendedMessage);
+    const alert = {
+      id: `${Date.now()}`,
+      patientName: "Sarah Johnson",
+      room: "304",
+      floor: "3rd",
+      type: classification.type,
+      severity: classification.severity,
+      label: classification.label,
+      message: unattendedMessage,
+      timestamp: "Just now",
+      status: "pending" as const,
+    };
+
+    addAlert(alert);
     setAlertStatus({
       isActive: true,
       message: unattendedMessage,
-      classification,
+      type: classification.type,
+      severity: classification.severity,
+      label: classification.label,
     });
   };
 
@@ -96,9 +130,9 @@ export default function UserView() {
         <div
           className={cn(
             "rounded-lg border-2 p-6",
-            alertStatus.classification.severity === "critical"
+            alertStatus.severity === "critical"
               ? "border-critical bg-red-50"
-              : alertStatus.classification.severity === "medium"
+              : alertStatus.severity === "medium"
                 ? "border-medium bg-yellow-50"
                 : "border-low bg-green-50"
           )}
@@ -107,9 +141,9 @@ export default function UserView() {
             <div
               className={cn(
                 "flex h-10 w-10 items-center justify-center rounded-full",
-                alertStatus.classification.severity === "critical"
+                alertStatus.severity === "critical"
                   ? "bg-critical"
-                  : alertStatus.classification.severity === "medium"
+                  : alertStatus.severity === "medium"
                     ? "bg-medium"
                     : "bg-low"
               )}
@@ -117,9 +151,9 @@ export default function UserView() {
               <span
                 className={cn(
                   "text-lg font-bold",
-                  alertStatus.classification.severity === "critical"
+                  alertStatus.severity === "critical"
                     ? "text-critical-foreground"
-                    : alertStatus.classification.severity === "medium"
+                    : alertStatus.severity === "medium"
                       ? "text-medium-foreground"
                       : "text-low-foreground"
                 )}
@@ -132,9 +166,9 @@ export default function UserView() {
                 <p
                   className={cn(
                     "font-semibold",
-                    alertStatus.classification.severity === "critical"
+                    alertStatus.severity === "critical"
                       ? "text-critical"
-                      : alertStatus.classification.severity === "medium"
+                      : alertStatus.severity === "medium"
                         ? "text-medium"
                         : "text-low"
                   )}
@@ -144,14 +178,14 @@ export default function UserView() {
                 <span
                   className={cn(
                     "rounded px-2 py-1 text-xs font-bold",
-                    alertStatus.classification.severity === "critical"
+                    alertStatus.severity === "critical"
                       ? "bg-critical text-critical-foreground"
-                      : alertStatus.classification.severity === "medium"
+                      : alertStatus.severity === "medium"
                         ? "bg-medium text-medium-foreground"
                         : "bg-low text-low-foreground"
                   )}
                 >
-                  {alertStatus.classification.label}
+                  {alertStatus.label}
                 </span>
               </div>
               <p className="text-sm text-foreground">
@@ -171,9 +205,9 @@ export default function UserView() {
               onClick={handleResolveAlert}
               className={cn(
                 "mt-4 rounded border px-4 py-2 text-sm font-medium transition-colors",
-                alertStatus.classification.severity === "critical"
+                alertStatus.severity === "critical"
                   ? "border-critical bg-critical text-critical-foreground hover:bg-red-700"
-                  : alertStatus.classification.severity === "medium"
+                  : alertStatus.severity === "medium"
                     ? "border-medium bg-medium text-medium-foreground hover:bg-yellow-600"
                     : "border-low bg-low text-low-foreground hover:bg-green-700"
               )}
